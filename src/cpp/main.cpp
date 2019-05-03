@@ -5,19 +5,18 @@
 
 int main(int argc, char **argv)
 {
-    // on lance une nouvelle application
+    // starting new app
     QCoreApplication a(argc, argv);
 
-    // on vérifie la version de protobuf
+    // verifying protobuf version
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-    // on lance notre plugin de SNMP (qui ne se connecte qu'a un seul "agent" pour le moment)
-    // le but du projet est de permettre à un seul plugin de se connecter à N agents
+    // laucnhing SNMPplugin
     SnmpPlugin *req = new SnmpPlugin();
 
-    // on informe le compilateur que "req" n'est pas utilisé
+    // notifying the compiler that req isn't used in this function body
     Q_UNUSED(req);
 
-    // on attent la fin de l'exécution de l'application
+    // waiting for the end of the app
     return a.exec();
 }

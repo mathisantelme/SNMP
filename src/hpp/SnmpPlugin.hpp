@@ -3,6 +3,7 @@
 
 #include <QDebug>
 #include "Protobuf.pb.h"
+#include "SnmpQueryManager.hpp"
 #include <libhasimov/messaging/configurationconnection.h>
 #include <libhasimov/messaging/connection.h>
 #include <libhasimov/messaging/willtestament.h>
@@ -23,93 +24,58 @@
  *
  * \brief The class which handle all the main operations.
  *
- * This class makes all operations :
- * Ini file read
- * MQTT server connection
- * Data serialisation
- * SNMP requests
- * ...
+ * This class makes the following operations :
+ * -> Reading a .ini file
+ * -> Creating SNMPQueryManager out of the informations contained in the setting file
+ * -> Connecting to a message broker
+ * 
+ * \author Emilien BARBAUD, ANTELME Mathis
  *
- * \author Emilien BARBAUD
- *
- * \date 2018
+ * \date 2019
  */
 
 using namespace proto::monitoring;
 
 class SnmpPlugin : public QObject
 {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
-    SnmpPlugin();
+  SnmpPlugin();
 
-    /**
-     * @brief Getter for sentFromStart
-     *
-     * @return Returns the number of Protobuf messages (group of requests) sent from start.
-     */
-    long getSentFromStart();
+  /**
+   * @brief Getter for sentFromStart
+   *
+   * @return Returns the number of Protobuf messages (group of requests) sent from start.
+   */
+  long getSentFromStart();
 
 public slots:
-    /**
-     * @brief Event called when timer is expired
-     */
-    void event();
+  /**
+   * @brief Event called when timer is expired
+   */
+  void event();
 
-    /**
-     * @brief Event called when a SNMP async request foud value.
-     *
-     * @note This verify each time if all the requests have been gathered.
-     */
-    void requestsDone();
+  /**
+   * @brief Event called when the connection with the Broker has been established
+   */
+  void MqttConnected() const;
 
-    /**
-     * @brief Event called when the connection with the Broker has been established
-     */
-    void MqttConnected() const;
-
-    /**
-     * @brief Event called when a disconnection with the Broker occurs
-     */
-    void MqttDisconnected() const;
+  /**
+   * @brief Event called when a disconnection with the Broker occurs
+   */
+  void MqttDisconnected() const;
 
 private:
+  QTimer _timer; // Timer used to launch async SNMP request
 
-    //The timer to make SNMP requests
-    QTimer _timer;
+  MQTTConnection *_mqtt; // a pointer to a message broker
 
-    //The full package of OID(SnmpObjects) to send
-    SnmpPackage _pack;
+  QSettings _settings; // an object used to store all of the configuration information
 
-    //The MQTT connection
-    MQTTConnection* _mqtt;
+  QList<SnmpQueryManager *> _managers; // a list of SNMPQueryManagers
 
-    //The serialized string to send
-    QString _serialized;
-
-    //List of all SNMP Requests
-    QList<SnmpRequest*> _oidList;
-
-    //Settings
-    QSettings _settings;
-
-    //Number of MQTT messages sent
-    long _sentFromStart;
-
-    //Number of received response of SNMP requests since last try
-    int _received;
-
-    //Function to read the ini file and fill the Protobuf serializer
-    void iniRead(const QString & file);
-
-    //Update the snmp values
-    void makeRequests();
-
-    //Serialize all the SNMP items/objects
-    //Sould be made after updating snmp values
-    void serialize();
-
+  long _sentFromStart; // the number of request sent from all of the managers
 };
 
 #endif // SNMPPLUGIN_H

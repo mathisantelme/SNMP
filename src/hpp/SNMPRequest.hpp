@@ -4,7 +4,7 @@
 #include <QDebug>
 #include <QTimer>
 #include <QtCore>
-#include <snmp_pp/snmp_pp.h> // bibliothèque introuvable
+#include <snmp_pp/snmp_pp.h>
 #include "globals.hpp"
 #include "utime.hpp"
 
@@ -17,70 +17,96 @@
  *
  * \note async_callback() method sould not be called
  *
- * \author Emilien BARBAUD
+ * \authors Emilien BARBAUD, ANTELME Mathis
  *
- * \date 2018
+ * \date 2019
  */
 
 class SnmpRequest : public QObject
 {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
-    SnmpRequest(const QString OID);
+  /**
+   * @brief Creates a SNMP GET request out of parameters list
+   * 
+   * @param OID The oid of the query
+   * @param inetaddr The IP addresse of the target
+   * @param retries The number of retries allowed (cTarget)
+   * @param timeout The delay allowed for the target (cTarget)
+   */
+  SnmpRequest(const QString OID, const QString inetaddr, int retries, long timeout);
 
-    /**
-     * @brief Launch an asynchronous SNMP Request to the device.
-     *
-     * When the result is received, a gotResponse() signal is emmited.
-     * Then you can use getValue().
-     * The use of a connect() is highly recommended.
-     */
-    virtual void makeRequest();
+  /**
+   * @brief Launch an asynchronous SNMP Request to the device.
+   *
+   * When the result is received, a gotResponse() signal is emmited.
+   * Then you can use getValue().
+   * The use of a connect() is highly recommended.
+   */
+  virtual void makeRequest();
 
-    /**
-     * @brief Should not be called by yourself, except you know exactly what you are doing.
-     * @param reason The reason for this callback
-     * @param snmp The Snmp object from SNMP++ lib.
-     * @param pdu The Pdu object from SNMP++ lib.
-     * @param target The target you created to define SNMP.
-     */
-    virtual void async_callback(int reason, Snmp_pp::Snmp *snmp, Snmp_pp::Pdu &pdu, Snmp_pp::SnmpTarget &target);
+  /**
+   * @brief Should not be called by yourself, except you know exactly what you are doing.
+   * @param reason The reason for this callback
+   * @param snmp The Snmp object from SNMP++ lib.
+   * @param pdu The Pdu object from SNMP++ lib.
+   * @param target The target you created to define SNMP.
+   */
+  virtual void async_callback(int reason, Snmp_pp::Snmp *snmp, Snmp_pp::Pdu &pdu, Snmp_pp::SnmpTarget &target);
 
-    /**
-     * @brief Getter for the OID
-     *
-     * @return Returns the OID
-     */
-    QString getOid() const;
+  /**
+   * @brief Getter for the OID
+   *
+   * @return Returns the OID
+   */
+  QString getOid() const;
 
-    /**
-     * @brief Getter for the value
-     *
-     * Is empty when instanciating the object, will take the right value after a makeRequest().
-     *
-     * @return Returns the first OID value on the list (for SNMP Get)
-     */
-    QString getValue() const;
+  /**
+   * @brief Getter for the value of the request
+   *
+   * Is empty when instanciating the object, will take the right value after a makeRequest().
+   *
+   * @return Returns the first OID value on the list (for SNMP Get)
+   */
+  QString getValue() const;
 
 private slots:
-    void timerExpired();
+  /**
+   * @brief Function called at each timer timeout
+   */
+  void timerExpired();
 
 private:
-    //The timer to make asynchronous event
-    QTimer _timer;
+  QTimer _timer; // the timer used to make asynchronous event
 
 protected:
-    //The target for SNMP Request
-    const Snmp_pp::CTarget *_ctarget;
+  /**
+   * @brief Used to create a Snmp_pp::CTarget
+   * 
+   * @param addr The ip addresse of the target
+   * @param retries The number of retries allowed
+   * @param timeout The delay allowed for the target
+   * 
+   * @return a Snmp_pp::CTarget pointer
+   */
+  const Snmp_pp::CTarget *_ctarget(const QString addr, int retries, long timeout);
 
-    const QString _OID;
+  // Parameters
 
-    QString _value;
-    Snmp_pp::Snmp *_snmp;
+  const QString _OID;   // the oid of the request
+  QString _value;       // the value returned by the request
+  Snmp_pp::Snmp *_snmp; // the snmp context of the request
+
+  QString _IPaddr; // the ip address of the target
+  int _retries;    // the number of retries allowed
+  long _timeout;   // the timeout delay
 
 signals:
-    void gotResponse();
+  /**
+   * @brief Function called when a request gets a response
+   */
+  void gotResponse();
 };
 
 #endif // SNMPREQUEST_H

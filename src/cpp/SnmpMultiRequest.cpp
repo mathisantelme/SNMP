@@ -3,169 +3,166 @@
 /*
  * CONSTRUCTOR
  */
-SnmpMultiRequest::SnmpMultiRequest(const QString OID, const int MAXI, const int GROUP) : SnmpRequest(OID), _MAX(MAXI), _GROUP(GROUP)
+SnmpMultiRequest::SnmpMultiRequest(const QString OID, const int MAXI, const int GROUP, const QString inetaddr, int retries, long timeout) : SnmpRequest(OID, inetaddr, retries, timeout), _MAX(MAXI), _GROUP(GROUP)
 {
-     _remain = _MAX; // on initialise le nombre d'envoi de requete maximum tant qu'on a pas recu de réponse
-     _lastOid = OID; // on initialise le dernier OID
+    _remain = _MAX; // setting the number of remaining request as the maximum amount of requests to send
+    _lastOid = OID; // setting the last OID value as the current OID
 }
 
 // C Callback function for snmp++
-void bulkCallback(int reason, Snmp_pp::Snmp *snmp, Snmp_pp::Pdu &pdu, Snmp_pp::SnmpTarget &target, void* cd)
+void bulkCallback(int reason, Snmp_pp::Snmp *snmp, Snmp_pp::Pdu &pdu, Snmp_pp::SnmpTarget &target, void *cd)
 {
-  if (cd)
-  {
-    // just call the real callback member function...
-    ((SnmpMultiRequest*)cd)->SnmpMultiRequest::async_callback(reason, snmp, pdu, target);
-  }
+    // calling the real callback member function
+    if (cd)
+        ((SnmpMultiRequest *)cd)->async_callback(reason, snmp, pdu, target);
 }
 
 // fonction qui permet d'effectuer une requete
-void SnmpMultiRequest::makeRequest(){
-    // si il ne reste aucun envoi de requete à effectuer
-    if(_remain <= 0){
-        // on réinitialise les valeurs du nombre d'envoi et de l'OID
-        _remain = _MAX;
-        _lastOid = _OID;
+void SnmpMultiRequest::makeRequest()
+{
+    // if no request are remaining
+    if (_remain <= 0)
+    {
+        _remain = _MAX;  // setting remaining request value to max request value
+        _lastOid = _OID; // setting lastOID value as current OID value
     }
 
-    // on récupère l'OID
-    Snmp_pp::Oid snmpOid(_lastOid.toLocal8Bit().constData());
+    Snmp_pp::Oid snmpOid(_lastOid.toLocal8Bit().constData()); // catching current OID
+    Snmp_pp::Pdu pdu;                                         // PDU
+    Snmp_pp::Vb vb;                                           // variables binding (VB)
 
-    Snmp_pp::Pdu pdu; // le type de requete
-    Snmp_pp::Vb vb; // le variable binding
-
-    // on affiche un message de confirmation
+    // displaying confirmation message
     qDebug() << "Bulk request processing...";
 
-    // on définit le VB
-    vb.set_oid(snmpOid);
-    // on ajoute le VB dans le PDU
-    pdu += vb;
+    vb.set_oid(snmpOid); // setting VB
+    pdu += vb;           // adding VB to PDU
+    int num = _GROUP;    // setting number of requests groups
 
-    // on récupère le nombre de requete à effectuer
-    int num = _GROUP;
-
-    // si le nombre de requete qu'il reste à effectuer est inférieur au nombre de requete total, on change la valeur du nombre de requete
-    if(_remain <= _GROUP)
+    // if the number of request remaining is equal or less than the number of request group,
+    // we make the last request as a whole group
+    // ex:  say 3 request are remaining and the group size is 4.
+    //  We launch the 3 remaining request as a group
+    if (_remain <= _GROUP)
         num = _remain;
 
-    // on lance la requete et on vérifie qu'on a pas d'erreur
-    int status = _snmp->get_bulk(pdu,(Snmp_pp::SnmpTarget&)* SnmpRequest::_ctarget, 0, num, bulkCallback, this);
+    // launching request
+    int status = _snmp->get_bulk(pdu, (Snmp_pp::SnmpTarget &)*SnmpRequest::_ctarget(this->_IPaddr, this->_retries, this->_timeout), 0, num, bulkCallback, this);
 
-    // si on a une erreur alors on affiche un warning et on change la valeur à null
-    if (status < 0) {
+    // if an error happens, we display a warning message and set the value of the request to "error"
+    if (status < 0)
+    {
         qWarning() << "Error while trying to get the OID, status = " << status;
         _value = "error";
     }
 }
 
-// fonction de callback asynchronne
-void SnmpMultiRequest::async_callback(int reason, Snmp_pp::Snmp * snmp, Snmp_pp::Pdu &pdu, Snmp_pp::SnmpTarget &target)
+void SnmpMultiRequest::async_callback(int reason, Snmp_pp::Snmp *snmp, Snmp_pp::Pdu &pdu, Snmp_pp::SnmpTarget &target)
 {
-    // on indique au compilateur que l'on ne sert pas des parametres suivants
+
+    // as snmp and target are parameters used to override the function, we need to inform the compiler that they are not used in this function
     Q_UNUSED(snmp);
     Q_UNUSED(target);
 
-    // on vérifie les raisons de la réponse
-    // si c'est une réponse d'une requete asynchronne
-    if (reason == SNMP_CLASS_ASYNC_RESPONSE)
+    // analysing the callback reason
+    switch (reason)
     {
-        // si il reste des requetes à effectuer
-        if(_remain >= 0){
-            // on affiche le nombre de réponse recues
+    case SNMP_CLASS_ASYNC_RESPONSE: // RESPONSE
+        // if there are request remaining
+        if (_remain >= 0)
+        {
+            // displaying the current number of response catched
             qDebug() << "Bulk !";
-            qDebug() << "Received" << pdu.get_vb_count() <<" response(s)";
+            qDebug() << "Received" << pdu.get_vb_count() << " response(s)";
 
-            // si le PDU est vide on affiche un warning
-            if (pdu.get_vb_count() == 0)
+            if (pdu.get_vb_count() == 0) // if PDU is empty we display a warining message
                 qWarning() << "Error : Pdu is empty";
-            // si le PDU contient au moins un VB
-            else {
-                // pour chaque VB dans le PDU
-                for(int i=0; i<pdu.get_vb_count(); i++){
-
-                    // on récupère le VB courant
+            else // if PDU contains at least one VB
+            {
+                // pfor each VB in PDU
+                for (int i = 0; i < pdu.get_vb_count(); i++)
+                {
+                    // catching current VB
                     Snmp_pp::Vb vbb;
-                    pdu.get_vb(vbb,i);
+                    pdu.get_vb(vbb, i);
 
-                    // on vérifie si il s'agit d'un noeud fils de l'OID courant
-                    if(QString::fromStdString(vbb.get_printable_oid()).prepend(".").contains(_OID)){
-
-                        // on récupère la valeur lisible du VB courant
+                    // checking if it is child of the request OID
+                    if (QString::fromStdString(vbb.get_printable_oid()).prepend(".").contains(_OID))
+                    {
+                        // converting current VB to string
                         QString valueStr = vbb.get_printable_value();
 
-                        // si la valeur n'est pas nulle
-                        if(!valueStr.isEmpty()){
-                            // si on est pas à la premiere reponse, on ajoute un séparateur avant de concaténer
-                            if (_remain != _MAX)
+                        // if value is not empty
+                        if (!valueStr.isEmpty())
+                        {
+                            if (_remain != _MAX) // if it's not the first response, we add a separator before concatenation
                                 _value += SETTINGS::SNMP::SEPARATOR;
-
-                            // si la valeur est nulle, on supprime la valeur par défaut avant de concaténer
                             else
                                 _value = "";
 
-
-                            // on affiche la valeur obtenue
+                            // displaying response catched
                             qDebug() << "Adding this :" << valueStr;
 
-                            // on concatène la valeur courante avec les valeurs précédentes
+                            // adding value catched to the global value of the request
                             _value += valueStr;
                         }
-                        // si la valeur est nulle alors on affiche un warning
+                        // if value is empty we display a warning
                         else
                             qWarning() << "Empty response !";
 
-                        // on affiche l'OID et la valeur trouvée
+                        // displaying OID and request value
                         qDebug() << "For this OID :" << _OID;
                         qDebug() << "Found this value :" << _value;
                     }
-                    // si on est pas dans un noeud fils (on a terminé)
-                    else {
-                        // on affiche des messages
+                    // if we are not in the child of the request OID (end of the bulk request)
+                    else
+                    {
+                        // displaying messages
                         qDebug() << "This OID is not a child :" << vbb.get_printable_oid();
                         qDebug() << "Ending SNMP walk request !";
-                        _remain = 1; // on met à jour le nombre de requetes restantes à pour quitter la boucle
+                        _remain = 1; // resetting the remain value to leave the if condition
                     }
 
-                    _remain --; // on décrémente le nombre de requetes restantes
+                    _remain--;
 
-                    // on affiche le progres effectué
-                    qDebug() << "Bulk progress :" << _MAX-_remain << "/" << _MAX << "    (" << (_MAX-_remain)*100/_MAX << "% )";
+                    // displaying progress
+                    qDebug() << "Bulk progress :" << _MAX - _remain << "/" << _MAX << "    (" << (_MAX - _remain) * 100 / _MAX << "% )";
 
-                    // si il ne reste aucune requete
-                    if (_remain <= 0) {
-                        emit gotResponse(); // on appelle le signal gotResponse
-                        break; // on quitte la boucle
+                    if (_remain <= 0) // if there is no more requests to be done
+                    {
+                        emit gotResponse(); // calling signal gotResponse
+                        break;              // leaving the loop
                     }
-                    // si on est rendu à l'avant-dernier VB
-                    else if (i == pdu.get_vb_count()-1){
-                        // on affiche tout les OIDs recus
-                        qDebug() << "Received this OIDs with bulk :";
+                    else if (i == pdu.get_vb_count() - 1) // if the current VB is the before last one
+                    {
+                        // displaying all of the catched OID
+                        qDebug() << "Received thoses OIDs with bulk :";
 
-                        // pour chacun des VB
-                        for(int i=0; i<pdu.get_vb_count(); i++){
-                            // on récupère l'OID du VB et on l'affiche
-                            pdu.get_vb(vbb,i);
+                        // for each VB
+                        for (int i = 0; i < pdu.get_vb_count(); i++)
+                        {
+                            // displaying value and OID
+                            pdu.get_vb(vbb, i);
                             qDebug() << "-->" << vbb.get_printable_oid();
                         }
 
-                        // on informe l'utilisateur qu'on lance une nouvelle requete en BULK
-                        qDebug() << "Launching next bulk request";
-
-                        // on récupère le nouvel OID (le dernier des VB)
+                        // setting the last OID
                         _lastOid = vbb.get_printable_oid();
 
-                        // on lance les requetes
+                        // launching next request
+                        qDebug() << "Launching next bulk request";
                         makeRequest();
-                    }
-                }
-            }
-        }
-    }
-    // si c'est un timeout, on affiche un warning
-    else if (reason == SNMP_CLASS_TIMEOUT)
+                    } // END - if _remain <= 0
+                }     // END - for each VB in PDU
+            }         // END - if PDU not empty
+        }             // END - if _remain >= 0
+        break;        // RESPONSE
+
+    case SNMP_CLASS_TIMEOUT: // TIMEOUT
         qWarning() << "Timeout  !";
-    // si la raison n'est pas reconnue, on affiche un warning
-    else
+        break; // TIMEOUT
+
+    default: // DEFAULT
         qWarning() << "Did not receive any async response/trap.";
+        break; // DEFAULT
+    }
 }
