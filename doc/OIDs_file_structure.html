@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>OIDs file structure</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+  <style>
+  body {
+    padding: 60px;
+    padding-top: 30px;
+  }
+  </style>
+</head>
+<body>
+	<h1>OIDs file structure</h1>
+		<p>File path : "config/config.ini" by default.<br/><strong>The name of this file</strong> is defined in <strong>"settings.ini"</strong>, in "snmp" section.</p>
+	<h2>Description</h2>
+		<p><strong>This file is used to set all the SNMP OIDs to retrieve from the device. First you have to make a list of the OIDs you wants, then you can define their properties by creating sections for each OID.</strong></p>
+	<h2>First key</h2>
+		<p>The file should start with a key called "OIDs". This contains the list of all the OIDs sections.</p>
+	<table class="table table-bordered table-striped table-condensed">
+		<thead>
+			<tr>
+				<th>Key</th>
+				<th>Type</th>
+				<th>Description</th>
+				<th>Required/Optional</th>
+				<th>Default</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>OIDs</td>
+				<td>string&nbsplist</td>
+				<td>A list with all the OIDs to retrieve. Uses a comma ( , ) as separator, each string is surrounded by quotes ( " ). For further explanations, see the example below.</td>
+				<td>Required</td>
+				<td>--</td>
+			</tr>
+		</tbody>
+	</table>
+	<h2>OIDs sections</h2>
+	<table class="table table-bordered table-striped table-condensed">
+		<thead>
+			<tr>
+				<th>Key</th>
+				<th>Type</th>
+				<th>Description</th>
+				<th>Required/Optional</th>
+				<th>Default</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>name</td>
+				<td>string</td>
+				<td>A significant name of the OID value. This name will be the same in Protobuf messages.</td>
+				<td>Required</td>
+				<td>--</td>
+			</tr>
+			<tr>
+				<td>desc</td>
+				<td>string</td>
+				<td>Brief description of the OID value. This description will be the same in Protobuf messages.</td>
+				<td>Optional</td>
+				<td>"No description"</td>
+			</tr>
+			<tr>
+				<td>walk</td>
+				<td>boolean</td>
+				<td>Indicates whether or not the program have to make an SNMPWalk request intead of a SNMPGet request. For multiple requests protobuf will send <strong>only one string</strong> with a list inside. The separator is a semicolon (;).</td>
+				<td>Optional</td>
+				<td>false</td>
+			</tr>
+			<tr>
+				<td>max</td>
+				<td>integer</td>
+				<td><strong>Only for SMPWalk requests.</strong> Maximum number of OIDs returned by the SNMPWalk. Larger values will be more CPU and RAM consuming.</td>
+				<td>Optional</td>
+				<td>20</td>
+			</tr>
+			<tr>
+				<td>group</td>
+				<td>integer</td>
+				<td><strong>Only for SMPWalk requests.</strong> The main group of requests will be splitted in smaller groups. This tag controls the size of the small groups created. <strong>Should be at least twice smaller than "max" tag to take effect,</strong> larger values are useless. <br/>Small values are time consuming and large values will result in more CPU usage, balance it according to your needs.</td>
+				<td>Optional</td>
+				<td>10</td>
+			</tr>
+		</tbody>
+	</table>
+	<h2>File example</h2>
+	<pre>
+		<code>
+OIDs=".1.2.3.4.5",".9.8.7.6.5"
+
+;SNMP Get request example
+[.1.2.3.4.5]
+name=uptime
+desc=Time since last start
+
+;SNMP Walk request example
+[.9.8.7.6.5]
+name=CPU cores
+desc=All CPU cores usage
+walk=true
+max=16
+group=4
+		</code>
+	</pre>
+	<h2>Output values schematic example for Protobuf</h2>
+	<div class="mxgraph" style="max-width:100%;border:1px solid transparent;" data-mxgraph="{&quot;highlight&quot;:&quot;#0000ff&quot;,&quot;nav&quot;:true,&quot;resize&quot;:true,&quot;toolbar&quot;:&quot;zoom layers lightbox&quot;,&quot;edit&quot;:&quot;_blank&quot;,&quot;xml&quot;:&quot;&lt;mxfile userAgent=\&quot;Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0\&quot; version=\&quot;8.7.7\&quot; editor=\&quot;www.draw.io\&quot; type=\&quot;google\&quot;&gt;&lt;diagram id=\&quot;d1f7f63f-5c2e-1a18-a060-ae7bf5af1a88\&quot; name=\&quot;Page-1\&quot;&gt;7ZlLc5swEIB/jY9l9ABsH20naQ/JNFO307MMMqgRiAq5tvPruwJhTHA6PsRxO8XDYGm1eu1+EloY0UW2+6hZkT6omMsRQfFuRG9GhEzGIdytYF8LfEprQaJFXItwK1iKZ+6EyEk3IuZlR9EoJY0ousJI5TmPTEfGtFbbrtpayW6vBUt4T7CMmOxLv4vYpE4aBn5b8ImLJHVdE0rdjFcsekq02uSuwxGh6+pXF2esaczNtExZrLZHIno7ogutlKlT2W7BpbVtY7e63t0rpYeBa56bcyoELJpiTigOp5G/CqcfXAu/mNw4YyzzrHiEaVmb1WM2+8ZQ5VZkkuWQm69VbpauBEE+SoWM79lebexASgMtNLl5qrR4Bn0moQiDAIq1cRyQ0LYmpFwoqTQIclV10FZa2sZcN5qXUO2xmTB+IXpgu47iPStNM0AlJStKsaqGbCtmTCcinytjVOaUmgneHY2n9SmdS7bicn5w+oshl0arJ35UD1W/Q0kDF2nsV1sAWw0mRZJDJoJZcKg+d47h2vDdq97GB4ZgbXKVcaP3oNJU8B12bl2OJ3V220Luj51KesQ34OEWl1tYyaHpli1IOLzORC04idrn1Q+7pAfS/gXSYF/WnJlZuRR50rgK/ZFBH3UZxHjagxBPaB9CHFwCQkx6FCpQhknYNAw1/Lmxm/Hcwx7xqOd7QSuDFJh6x6ok6jEL5jM93ziHncCu8YPka1vN2l/AM2nmxEYVtrGCRWDr+0rnxm8lX5ylrEhB3bWsniupiGOeWyqVYYatDqumUCI3lSWDOVww+gWCuQUw8AXkcZuHy6prs1A5zIWJCgEOfG95ac7l5fTy72PisCDheVSQi0BBe1DUyT4Wtn8Us31pzUYQwExnGJb4jE69kB6jMsDxZnAE5JpwoB4cOctOsbEpjLAFw3ZxcSJOnGTekYj+oRnCl+gEEV8rHlAp8sj+S3tGIAgODPZUMmwWF0EDI/+abPg9NrZMPh3YaAKuwdlv42yKrunsIaT5H0MaHIw7IQ1B46uGNOG5Ic3Um3hjLxxCmjfam/DfHNOMz49pKNyqdQQTghseTiaXAeK6cczk3Dhm8fhtZF+2w1Ng2Cjeg4vrRjPTc6OZWdVQhw60KavvBMN+cQkurhvKkP6Lj04o05w7Bm+/kbcvGMtAtv3IWJUdfcmlt78B&lt;/diagram&gt;&lt;/mxfile&gt;&quot;}"></div>
+<script type="text/javascript" src="https://www.draw.io/js/viewer.min.js"></script>
+</body>
+</html>
+
+
+

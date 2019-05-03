@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$class_snmp_plugin.html" title="The class which handle all the main operations. " alt="" coords="5,29,97,56"/>
+<area shape="rect" id="node2" href="$class_snmp_request.html" title="The class to make the SNMP Requests. " alt="" coords="145,29,251,56"/>
+<area shape="rect" id="node3" href="$class_snmp_multi_request.html" title="The class to make the SNMP Walk multi requests. " alt="" coords="299,29,432,56"/>
+</map>

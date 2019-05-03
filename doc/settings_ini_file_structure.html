@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Settings.ini file structure</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+  <style>
+  body {
+    padding: 60px;
+    padding-top: 30px;
+  }
+  </style>
+</head>
+<body>
+	<h1>Settings file structure</h1>
+		<p>File path : config/settings.ini</p>
+	<h2>Description</h2>
+		<p><strong>This file is used to set the main settings of the application.</strong></p>
+	<h2>timer section</h2>
+		<p>Settings about timers and delays.</p>
+	<table class="table table-bordered table-striped table-condensed">
+		<thead>
+			<tr>
+				<th>Key</th>
+				<th>Type</th>
+				<th>Description</th>
+				<th>Required/Optional</th>
+				<th>Default</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>delay</td>
+				<td>integer</td>
+				<td>The delay between each requests group.</td>
+				<td>Optional</td>
+				<td>5000</td>
+			</tr>
+		</tbody>
+	</table>
+	<h2>snmp section</h2>
+	<p>Settings about SNMP.</p>
+	<table class="table table-bordered table-striped table-condensed">
+		<thead>
+			<tr>
+				<th>Key</th>
+				<th>Type</th>
+				<th>Description</th>
+				<th>Required/Optional</th>
+				<th>Default</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>ip</td>
+				<td>string</td>
+				<td>The ip address of the device to reach.</td>
+				<td>Optional</td>
+				<td>"127.0.0.1"</td>
+			</tr>
+			<tr>
+				<td>timeout</td>
+				<td>integer</td>
+				<td>The timeout for SNMP requests.</td>
+				<td>Optional</td>
+				<td>3000</td>
+			</tr>
+			<tr>
+				<td>autoretries</td>
+				<td>integer</td>
+				<td>Max number of autoretries for SNMP requests.</td>
+				<td>Optional</td>
+				<td>10</td>
+			</tr>
+			<tr>
+				<td>filename</td>
+				<td>string</td>
+				<td>Path of the OIDs settings file.</td>
+				<td>Optional</td>
+				<td>"config/OID.ini"</td>
+			</tr>
+		</tbody>
+	</table>
+	<h2>mqtt section</h2>
+	<p>Settings about SNMP.</p>
+	<table class="table table-bordered table-striped table-condensed">
+		<thead>
+			<tr>
+				<th>Key</th>
+				<th>Type</th>
+				<th>Description</th>
+				<th>Required/Optional</th>
+				<th>Default</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>ip</td>
+				<td>string</td>
+				<td>The ip address of the device to send data. (MQTT server)</td>
+				<td>Optional</td>
+				<td>"127.0.0.1"</td>
+			</tr>
+			<tr>
+				<td>port</td>
+				<td>integer</td>
+				<td>The MQTT port.</td>
+				<td>Optional</td>
+				<td>1883</td>
+			</tr>
+		</tbody>
+	</table>
+</body>
+</html>

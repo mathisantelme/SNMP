@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package proto.monitoring;
+
+message SnmpObject {
+	required string oid = 1;
+	required string value = 2;
+	required string name = 3;
+	optional string description = 4;
+	optional sint32 walk = 5;
+}
+
+message SnmpPackage {
+	repeated SnmpObject obj = 1;
+}
